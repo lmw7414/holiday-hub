@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DataJpaTest
 @Import(QueryDslConfig.class)
@@ -35,6 +36,7 @@ class JpaRepositoryTest {
                         HolidayInfo.of(LocalDate.of(2025, 1, 1), "새해", "New Year's Day", "KR", Boolean.FALSE, Boolean.TRUE, null, null, List.of(HolidayType.PUBLIC)),
                         HolidayInfo.of(LocalDate.of(2024, 3, 1), "3·1절", "Independence Movement Day", "KR", Boolean.FALSE, Boolean.TRUE, null, null, List.of(HolidayType.PUBLIC)),
                         HolidayInfo.of(LocalDate.of(2024, 12, 25), "크리스마스", "Christmas Day", "KR", Boolean.FALSE, Boolean.TRUE, null, null, List.of(HolidayType.PUBLIC)),
+                        HolidayInfo.of(LocalDate.of(2024, 12, 31), "마지막 날", "Last Day", "KR", Boolean.FALSE, Boolean.TRUE, null, null, List.of(HolidayType.OPTIONAL)),
                         HolidayInfo.of(LocalDate.of(2024, 1, 15), "Martin Luther King, Jr. Day", "Martin Luther King, Jr. Day", "US", Boolean.FALSE, Boolean.TRUE, null, null, List.of(HolidayType.PUBLIC)),
                         HolidayInfo.of(LocalDate.of(2024, 2, 12), "Lincoln's Birthday", "Lincoln's Birthday", "US", Boolean.FALSE, Boolean.FALSE, "US-CA,US-CT,US-IL,US-IN,US-KY,US-MI,US-MO,US-NY,US-OH", null, List.of(HolidayType.OBSERVANCE)),
                         HolidayInfo.of(LocalDate.of(2025, 11, 8), "TEST-1", "TEST-1", "TS1", Boolean.FALSE, Boolean.FALSE, "TS1-TT, TS1-TK, TS1-TR", null, List.of(HolidayType.AUTHORITIES, HolidayType.SCHOOL)),
@@ -149,6 +151,25 @@ class JpaRepositoryTest {
         assertThat(result.getContent().stream()
                 .allMatch(holiday -> holiday.getTypes().contains(type))
         ).isTrue();
+    }
+
+    @Test
+    void 기간과_나라코드가_주어졌을때_범위에_해당하는_모든_데이터를_삭제한다() {
+        // Given
+        int year = 2024;
+        String countryCode = "KR";
+        LocalDate from = LocalDate.of(year, 1, 1);
+        LocalDate to = LocalDate.of(year, 12, 31);
+        long beforeCount = holidayInfoRepository.count();
+        long afterCount = holidayInfoRepository.findAll().stream()
+                .filter(holidayInfo -> holidayInfo.getCountryCode().equals(countryCode) &&
+                        !holidayInfo.getDate().isBefore(from) && !holidayInfo.getDate().isAfter(to)
+                )
+                .count();
+        // When
+        holidayInfoRepository.deleteAllByYearAndCountryCode(from, to, countryCode);
+        // Then
+        assertEquals(beforeCount - afterCount, holidayInfoRepository.count());
     }
 
     static Stream<Arguments> holidayType() {
