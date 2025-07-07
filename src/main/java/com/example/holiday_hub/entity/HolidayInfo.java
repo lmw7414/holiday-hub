@@ -1,12 +1,13 @@
 package com.example.holiday_hub.entity;
 
-import com.example.holiday_hub.entity.converter.HolidayTypeListConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Table
 @Entity
@@ -23,8 +24,7 @@ public class HolidayInfo {
     private boolean global;
     private String counties;
     private Integer launchYear;
-    @Convert(converter = HolidayTypeListConverter.class)
-    private List<HolidayType> types;
+    private String types;
     private LocalDateTime registeredAt;
     private LocalDateTime updatedAt;
 
@@ -40,7 +40,7 @@ public class HolidayInfo {
         this.global = global;
         this.counties = counties;
         this.launchYear = launchYear;
-        this.types = types;
+        this.types = (types == null) ? null : types.stream().map(HolidayType::name).sorted().collect(Collectors.joining(","));
     }
 
     public static HolidayInfo of(LocalDate date, String localName, String name, String countryCode, Boolean fixed, Boolean global, String counties, Integer launchYear, List<HolidayType> types) {
@@ -56,6 +56,11 @@ public class HolidayInfo {
     @PreUpdate
     void updatedAt() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public List<HolidayType> getTypes() {
+        if (types == null || types.isBlank()) return List.of();
+        return Arrays.stream(types.split(",")).map(HolidayType::valueOf).toList();
     }
 
 }
