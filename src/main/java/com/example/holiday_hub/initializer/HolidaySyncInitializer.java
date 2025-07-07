@@ -6,6 +6,8 @@ import com.example.holiday_hub.repository.CountryInfoRepository;
 import com.example.holiday_hub.repository.HolidayInfoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,11 @@ public class HolidaySyncInitializer {
     private final HolidayInfoRepository holidayInfoRepository;
 
     @Transactional
+    @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationReady() {
+        syncAll(2024, 2025);
+    }
+
     public void syncAll(int fromYear, int toYear) {
         // TODO: 속도 개선 작업 REFACTORING 필요
         List<CountryInfoDto> countriesDtos = client.fetchCountries();
