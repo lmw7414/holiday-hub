@@ -122,7 +122,7 @@ class HolidayServiceTest {
         );
 
         when(holidayApiClient.fetchHolidays(year, countryCode)).thenReturn(List.of(newDto));
-        when(holidayInfoRepository.findByDateAndCountryCodeAndName(newDto.date(), countryCode, newDto.name())).thenReturn(exist);
+        when(holidayInfoRepository.findByDateAndCountryCodeAndLocalName(newDto.date(), countryCode, newDto.localName())).thenReturn(exist);
 
         // When
         sut.updateHoliday(year, countryCode);
@@ -154,7 +154,7 @@ class HolidayServiceTest {
         );
 
         when(holidayApiClient.fetchHolidays(year, countryCode)).thenReturn(List.of(newDto));
-        when(holidayInfoRepository.findByDateAndCountryCodeAndName(newDto.date(), countryCode, newDto.name())).thenReturn(null);
+        when(holidayInfoRepository.findByDateAndCountryCodeAndLocalName(newDto.date(), countryCode, newDto.localName())).thenReturn(null);
 
         // When
         sut.updateHoliday(year, countryCode);
