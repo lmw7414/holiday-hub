@@ -20,6 +20,8 @@ public record HolidayInfoDto(
         List<HolidayType> types
 ) {
     public static HolidayInfoDto from(HolidayInfo entity) {
+        List<String> counties = null;
+        if (entity.getCounties() != null) counties = Arrays.stream(entity.getCounties().split(",")).toList();
         return new HolidayInfoDto(
                 entity.getDate(),
                 entity.getLocalName(),
@@ -27,7 +29,7 @@ public record HolidayInfoDto(
                 entity.getCountryCode(),
                 entity.isFixed(),
                 entity.isGlobal(),
-                Arrays.stream(entity.getCounties().split(",")).toList(),
+                counties,
                 entity.getLaunchYear(),
                 entity.getTypes()
         );
@@ -36,8 +38,8 @@ public record HolidayInfoDto(
     public static HolidayInfo toEntity(HolidayInfoDto dto) {
         String countiesToString = null;
         Integer launchYear = null;
-        if(dto.counties != null) countiesToString = dto.counties.stream().sorted().collect(Collectors.joining(","));
-        if(dto.launchYear != null) launchYear = dto.launchYear;
+        if (dto.counties != null) countiesToString = dto.counties.stream().sorted().collect(Collectors.joining(","));
+        if (dto.launchYear != null) launchYear = dto.launchYear;
         return HolidayInfo.of(
                 dto.date,
                 dto.localName,
@@ -48,6 +50,6 @@ public record HolidayInfoDto(
                 countiesToString,
                 launchYear,
                 dto.types
-                );
+        );
     }
 }
