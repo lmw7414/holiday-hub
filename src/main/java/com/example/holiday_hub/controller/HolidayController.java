@@ -24,10 +24,14 @@ public class HolidayController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(required = false) String countryCode,
-            @RequestParam(required = false) HolidayType type,
+            @RequestParam(required = false) String type,
             Pageable pageable
     ) {
-        return holidayService.search(new HolidaySearchCondition(from, to, countryCode, type, pageable));
+        HolidayType holidayType = null;
+        if(type != null) {
+            holidayType = HolidayType.from(type);
+        }
+        return holidayService.search(new HolidaySearchCondition(from, to, countryCode, holidayType, pageable));
     }
 
     @PutMapping("/sync")

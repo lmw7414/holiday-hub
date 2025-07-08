@@ -6,6 +6,7 @@ import com.example.holiday_hub.repository.CountryInfoRepository;
 import com.example.holiday_hub.repository.HolidayInfoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -22,10 +23,15 @@ public class HolidaySyncInitializer {
     private final CountryInfoRepository countryInfoRepository;
     private final HolidayInfoRepository holidayInfoRepository;
 
+    @Value("${support.year.from}")
+    private Integer fromYear;
+    @Value("${support.year.to}")
+    private Integer toYear;
+
     @Transactional
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
-        syncAll(2024, 2025);
+        syncAll(fromYear, toYear);
     }
 
     public void syncAll(int fromYear, int toYear) {

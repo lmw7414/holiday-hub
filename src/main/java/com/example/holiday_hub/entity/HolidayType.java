@@ -1,6 +1,9 @@
 package com.example.holiday_hub.entity;
 
+import com.example.holiday_hub.exception.ErrorCode;
+import com.example.holiday_hub.exception.HolidayApplicationException;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -21,8 +24,8 @@ public enum HolidayType {
     @JsonCreator
     public static HolidayType from(String value) {
         return Arrays.stream(HolidayType.values())
-                .filter(type -> type.name.equalsIgnoreCase(value))
+                .filter(type -> value.equalsIgnoreCase(type.name))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("알려지지 않은 타입: " + value));
+                .orElseThrow(() -> new HolidayApplicationException(ErrorCode.UNSUPPORTED_HOLIDAY_TYPE));
     }
 }

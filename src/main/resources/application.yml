@@ -24,6 +24,10 @@ spring:
   h2:
     console:
       enabled: true
+support:
+  year:
+    from: 2024
+    to: 2025
 
 logging:
   level:
