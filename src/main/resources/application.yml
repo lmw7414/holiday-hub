@@ -32,3 +32,11 @@ support:
 logging:
   level:
     root: info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  api-docs:
+    path: /api-docs
+    enabled: true

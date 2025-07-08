@@ -3,7 +3,6 @@ package com.example.holiday_hub.entity;
 import com.example.holiday_hub.exception.ErrorCode;
 import com.example.holiday_hub.exception.HolidayApplicationException;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
