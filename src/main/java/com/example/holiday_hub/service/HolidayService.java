@@ -8,7 +8,9 @@ import com.example.holiday_hub.exception.HolidayApplicationException;
 import com.example.holiday_hub.initializer.HolidayApiClient;
 import com.example.holiday_hub.repository.HolidayInfoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class HolidayService {
@@ -46,17 +49,21 @@ public class HolidayService {
         List<HolidayInfoDto> latest = client.fetchHolidays(year, countryCode);
         List<HolidayInfo> upsert = new ArrayList<>();
         for (HolidayInfoDto newDto : latest) {
-            HolidayInfo exist = holidayInfoRepository.findByDateAndCountryCodeAndName(newDto.date(), newDto.countryCode(), newDto.name());
-            if(exist == null) upsert.add(HolidayInfoDto.toEntity(newDto)); // 새로운 데이터
-            else { // 기존 데이터
-                exist.update(
-                        newDto.localName(),
-                        newDto.fixed(),
-                        newDto.global(),
-                        newDto.launchYear(),
-                        newDto.types(),
-                        (newDto.counties() != null) ? newDto.counties().stream().sorted().collect(Collectors.joining(",")) : null
-                );
+            try {
+                HolidayInfo exist = holidayInfoRepository.findByDateAndCountryCodeAndLocalName(newDto.date(), newDto.countryCode(), newDto.localName());
+                if (exist == null) upsert.add(HolidayInfoDto.toEntity(newDto)); // 새로운 데이터
+                else { // 기존 데이터
+                    exist.update(
+                            newDto.localName(),
+                            newDto.fixed(),
+                            newDto.global(),
+                            newDto.launchYear(),
+                            newDto.types(),
+                            (newDto.counties() != null) ? newDto.counties().stream().sorted().collect(Collectors.joining(",")) : null
+                    );
+                }
+            } catch (IncorrectResultSizeDataAccessException e) {
+                log.warn("동일한 결과를 가진 데이터가 존재하므로 덮어쓰기 생략: date={}, countryCode={}, name={}", newDto.date(), newDto.countryCode(), newDto.name());
             }
         }
         holidayInfoRepository.saveAll(upsert);
