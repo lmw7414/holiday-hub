@@ -20,4 +20,6 @@ public interface HolidayInfoRepository extends JpaRepository<HolidayInfo, Long>,
             @Param("end") LocalDate end,
             @Param("countryCode") String countryCode
     );
+
+    HolidayInfo findByDateAndCountryCodeAndName(LocalDate date, String countryCode, String name);
 }

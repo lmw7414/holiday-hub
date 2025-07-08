@@ -2,6 +2,7 @@ package com.example.holiday_hub.service;
 
 import com.example.holiday_hub.dto.HolidayInfoDto;
 import com.example.holiday_hub.dto.HolidaySearchCondition;
+import com.example.holiday_hub.entity.HolidayInfo;
 import com.example.holiday_hub.exception.ErrorCode;
 import com.example.holiday_hub.exception.HolidayApplicationException;
 import com.example.holiday_hub.initializer.HolidayApiClient;
@@ -13,7 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,11 +42,25 @@ public class HolidayService {
     public void updateHoliday(int year, String countryCode) {
         validateYear(year);
         countryService.getCountryInfoOrException(countryCode);
-        deleteHoliday(year, countryCode);
-        List<HolidayInfoDto> updated = client.fetchHolidays(year, countryCode);
-        holidayInfoRepository.saveAll(updated.stream().map(HolidayInfoDto::toEntity).toList());
-    }
 
+        List<HolidayInfoDto> latest = client.fetchHolidays(year, countryCode);
+        List<HolidayInfo> upsert = new ArrayList<>();
+        for (HolidayInfoDto newDto : latest) {
+            HolidayInfo exist = holidayInfoRepository.findByDateAndCountryCodeAndName(newDto.date(), newDto.countryCode(), newDto.name());
+            if(exist == null) upsert.add(HolidayInfoDto.toEntity(newDto)); // 새로운 데이터
+            else { // 기존 데이터
+                exist.update(
+                        newDto.localName(),
+                        newDto.fixed(),
+                        newDto.global(),
+                        newDto.launchYear(),
+                        newDto.types(),
+                        (newDto.counties() != null) ? newDto.counties().stream().sorted().collect(Collectors.joining(",")) : null
+                );
+            }
+        }
+        holidayInfoRepository.saveAll(upsert);
+    }
 
     // 특정 연도, 국가의 공휴일 레코드 전체 삭제
     @Transactional

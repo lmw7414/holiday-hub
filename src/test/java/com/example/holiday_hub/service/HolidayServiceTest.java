@@ -7,6 +7,7 @@ import com.example.holiday_hub.entity.HolidayType;
 import com.example.holiday_hub.exception.ErrorCode;
 import com.example.holiday_hub.exception.HolidayApplicationException;
 import com.example.holiday_hub.initializer.HolidayApiClient;
+import com.example.holiday_hub.initializer.HolidaySyncInitializer;
 import com.example.holiday_hub.repository.HolidayInfoRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -16,12 +17,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -31,6 +32,8 @@ class HolidayServiceTest {
     @Autowired
     private HolidayService sut;
 
+    @MockitoBean
+    private HolidaySyncInitializer syncInitializer;
     @MockitoBean
     private HolidayApiClient holidayApiClient;
     @MockitoBean
@@ -92,30 +95,78 @@ class HolidayServiceTest {
     }
 
     @Test
-    void 특정년도와_나라코드가_주어졌을때_정상동작() {
+    void 덮어쓰기_이미_존재하는_공휴일_정보가_있다면_업데이트() {
         // Given
         int year = 2024;
         String countryCode = "KR";
-        when(holidayApiClient.fetchHolidays(year, countryCode))
-                .thenReturn(List.of(
-                        new HolidayInfoDto(LocalDate.of(2024, 1, 1),
-                                "TEST-localName",
-                                "TEST-name",
-                                countryCode,
-                                Boolean.FALSE,
-                                Boolean.FALSE,
-                                null,
-                                null,
-                                List.of(HolidayType.PUBLIC)
-                        )
-                ));
-        ArgumentCaptor<List<HolidayInfo>> captor = ArgumentCaptor.forClass(List.class);
+        HolidayInfo exist = HolidayInfo.of(
+                LocalDate.of(year,1,1),
+                "신정",
+                "New Year's Day",
+                countryCode,
+                true,
+                true,
+                null,
+                null,
+                List.of(HolidayType.PUBLIC)
+        );
+        HolidayInfoDto newDto = new HolidayInfoDto(LocalDate.of(2024, 1, 1),
+                "TEST-신정",
+                "New Year's Day",
+                countryCode,
+                Boolean.FALSE,
+                Boolean.FALSE,
+                null,
+                null,
+                List.of(HolidayType.PUBLIC, HolidayType.OPTIONAL)
+        );
+
+        when(holidayApiClient.fetchHolidays(year, countryCode)).thenReturn(List.of(newDto));
+        when(holidayInfoRepository.findByDateAndCountryCodeAndName(newDto.date(), countryCode, newDto.name())).thenReturn(exist);
+
         // When
         sut.updateHoliday(year, countryCode);
+
         // Then
-        verify(holidayInfoRepository, times(1)).deleteAllByYearAndCountryCode(any(LocalDate.class), any(LocalDate.class), eq(countryCode));
+        verify(countryService, times(1)).getCountryInfoOrException(countryCode);
+        verify(holidayInfoRepository, times(1)).saveAll(Collections.emptyList());
+        assertThat(exist.getLocalName()).isEqualTo("TEST-신정");
+        assertThat(exist.isFixed()).isFalse();
+        assertThat(exist.isGlobal()).isFalse();
+        assertThat(exist.getTypes()).containsExactlyInAnyOrder(HolidayType.PUBLIC, HolidayType.OPTIONAL);
+    }
+
+    @Test
+    void 덮어쓰기__존재하지_않는_공휴일_정보가_있다면_새로_저장() {
+        // Given
+        int year = 2024;
+        String countryCode = "KR";
+
+        HolidayInfoDto newDto = new HolidayInfoDto(LocalDate.of(2024, 1, 1),
+                "TEST-신정",
+                "New Year's Day",
+                countryCode,
+                Boolean.FALSE,
+                Boolean.FALSE,
+                null,
+                null,
+                List.of(HolidayType.PUBLIC, HolidayType.OPTIONAL)
+        );
+
+        when(holidayApiClient.fetchHolidays(year, countryCode)).thenReturn(List.of(newDto));
+        when(holidayInfoRepository.findByDateAndCountryCodeAndName(newDto.date(), countryCode, newDto.name())).thenReturn(null);
+
+        // When
+        sut.updateHoliday(year, countryCode);
+
+        // Then
+        ArgumentCaptor<List<HolidayInfo>> captor = ArgumentCaptor.forClass(List.class);
+        verify(countryService, times(1)).getCountryInfoOrException(countryCode);
         verify(holidayInfoRepository, times(1)).saveAll(captor.capture());
-        assertThat(captor.getValue()).hasSize(1);
+        List<HolidayInfo> saved = captor.getValue();
+        assertThat(saved).hasSize(1);
+        assertThat(saved.get(0).getName()).isEqualTo("New Year's Day");
+        assertThat(saved.get(0).getTypes()).containsExactlyInAnyOrder(HolidayType.PUBLIC, HolidayType.OPTIONAL);
     }
 
     @Test

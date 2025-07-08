@@ -53,14 +53,19 @@ public class HolidayInfo {
         this.updatedAt = LocalDateTime.now();
     }
 
-    @PreUpdate
-    void updatedAt() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
     public List<HolidayType> getTypes() {
         if (types == null || types.isBlank()) return List.of();
         return Arrays.stream(types.split(",")).map(HolidayType::valueOf).toList();
+    }
+
+    public void update(String localName, boolean fixed, boolean global, Integer launchYear, List<HolidayType> types, String counties) {
+        this.localName = localName;
+        this.fixed = fixed;
+        this.global = global;
+        this.launchYear = launchYear;
+        this.types = (types == null) ? null : types.stream().map(HolidayType::name).sorted().collect(Collectors.joining(","));
+        this.counties = counties;
+        this.updatedAt = LocalDateTime.now();
     }
 
 }
