@@ -21,12 +21,13 @@ spring:
           batch_size: 100
         order_inserts: true
         format_sql: true
+#        generate_statistics: true
   h2:
     console:
       enabled: true
 support:
   year:
-    from: 2024
+    from: 2020
     to: 2025
 
 logging:
