@@ -111,6 +111,9 @@ DELETE /api/holidays
 
 ### 2. 국가 API
 #### 1. 국가 정보 전체 조회
+```aiignore
+GET /api/countries
+```
 
 <details>
 <summary>요청 파라미터</summary>
