@@ -122,6 +122,7 @@ DELETE /api/holidays
 
 ## 🔍 Swagger UI 확인
 Swagger UI: http://localhost:8080/swagger-ui.html
+
 OpenAPI JSON: http://localhost:8080/api-docs
 
 ## 📂 기술 스택
